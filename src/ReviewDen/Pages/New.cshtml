@@ -1,0 +1,79 @@
+@page "/new"
+@model NewModel
+@{ ViewData["Title"] = L["post"]; }
+
+<div class="mx-auto form-card" style="max-width:600px">
+    <div class="text-center mb-4">
+        @Ui.Emoji("270d_fe0f", 44)
+        <h1 class="h3 fw-bold mt-2 mb-1">@L["post"]</h1>
+        <p class="text-muted mb-0">@L["post_sub"]</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="new-post">
+        <label class="photo-drop mb-1" for="Photo">
+            <img id="photo-preview" alt="" hidden />
+            <span id="photo-hint" class="text-center">
+                @Ui.Emoji("1f4f8", 56)
+                <span class="d-block fw-semibold mt-2">@L["photo"]</span>
+                <span class="d-block small text-muted">@L["photo_hint"]</span>
+            </span>
+        </label>
+        <input asp-for="Photo" type="file" accept="image/*" class="visually-hidden" required />
+        <div class="text-danger small mb-3"><span asp-validation-for="Photo"></span></div>
+
+        <fieldset class="field">
+            <legend class="field-label">@Ui.Icon("emoji-smile") @L["mood"]</legend>
+            <div class="mood-pick">
+                @foreach (var m in Moods.All)
+                {
+                    <input type="radio" class="btn-check" name="Mood" id="mood-@m.Id" value="@m.Id" data-mood="@m.Key" required @(Model.Mood == m.Id ? "checked" : "") />
+                    <label for="mood-@m.Id" class="mood-opt" style="--c:@m.Color">@Ui.Emoji(m.Emoji, 40)<span>@(L.Bn ? m.Bn : m.En)</span></label>
+                }
+            </div>
+            <span asp-validation-for="Mood" class="text-danger small"></span>
+        </fieldset>
+
+        <div class="field">
+            <label asp-for="Title" class="field-label">@Ui.Icon("tag") @L["title"]</label>
+            <div class="input-icon">
+                @Ui.Icon("box-seam")
+                <input asp-for="Title" class="form-control" maxlength="120" placeholder="@L["title_ph"]" required />
+            </div>
+            <span asp-validation-for="Title" class="text-danger small"></span>
+        </div>
+
+        <fieldset class="field">
+            <legend class="field-label">@Ui.Icon("grid") @L["category"]</legend>
+            <div class="cat-pick">
+                @foreach (var c in Model.Categories)
+                {
+                    <input type="radio" class="btn-check" name="CategoryId" id="cat-@c.Id" value="@c.Id" required @(Model.CategoryId == c.Id ? "checked" : "") />
+                    <label for="cat-@c.Id" class="chip">@Moods.ForCategory(c.Id).Split(' ')[0] @L.Cat(c)</label>
+                }
+            </div>
+            <span asp-validation-for="CategoryId" class="text-danger small"></span>
+        </fieldset>
+
+        <div class="field">
+            <label asp-for="Body" class="field-label">@Ui.Icon("chat-square-text") @L["details"]</label>
+            <textarea asp-for="Body" class="form-control" rows="5" maxlength="4000" placeholder="@L["details_ph"]" required data-count="body-count"></textarea>
+            <div class="d-flex justify-content-between">
+                <span asp-validation-for="Body" class="text-danger small"></span>
+                <span class="small text-muted ms-auto" id="body-count">0 / 4000</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="AuthorName" class="field-label">@Ui.Icon("person") @L["name"]</label>
+            <div class="input-icon">
+                @Ui.Icon("person-circle")
+                <input asp-for="AuthorName" class="form-control" maxlength="40" placeholder="@L["name_ph"]" required data-remember="name" />
+            </div>
+            <span asp-validation-for="AuthorName" class="text-danger small"></span>
+        </div>
+
+        <div class="action-bar d-block">
+            <button class="btn btn-brand btn-lg w-100 btn-glow">@Ui.Icon("send-fill") @L["submit"]</button>
+        </div>
+    </form>
+</div>

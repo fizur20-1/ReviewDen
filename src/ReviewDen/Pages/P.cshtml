@@ -1,0 +1,125 @@
+@page "/p/{id:int}"
+@model PModel
+@{
+    var p = Model.Post;
+    ViewData["Title"] = p.Title;
+    var origin = $"{Request.Scheme}://{Request.Host}";
+    var url = $"{origin}/p/{p.Id}";
+    var img = $"{origin}/uploads/{p.ImagePath}";
+    var summary = p.Body.Length > 160 ? p.Body[..160] + "…" : p.Body;
+    var comments = p.Comments.Where(c => !c.Hidden).OrderBy(c => c.Id).ToList();
+    var fresh = Request.Query.ContainsKey("fresh");
+    var mood = Moods.Of(p.Mood);
+    var moodLabel = L.Bn ? mood.Bn : mood.En;
+    ViewData["Mood"] = mood.Key;
+    ViewData["MoodColor"] = mood.Color;
+}
+@section Meta {
+    <meta name="description" content="@summary" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="@url" />
+    <meta property="og:title" content="@p.Title" />
+    <meta property="og:description" content="@summary" />
+    <meta property="og:image" content="@img" />
+    <meta name="twitter:card" content="summary_large_image" />
+}
+
+<div class="fx" aria-hidden="true" data-emojis="@Moods.ForCategory(p.CategoryId)"></div>
+
+<div class="row g-4 post-page">
+    <div class="col-lg-7">
+        <div class="post-photo">
+            <img src="/uploads/@p.ImagePath" alt="@p.Title" id="post-img" />
+        </div>
+    </div>
+
+    <article class="col-lg-5">
+        @if (fresh)
+        {
+            <div class="alert alert-success py-2 d-flex align-items-center gap-2 pop-in">@Ui.Emoji("1f389", 28) @L["live"]</div>
+        }
+        @if (TempData["msg"] is "reported")
+        {
+            <div class="alert alert-info py-2 pop-in">@Ui.Icon("shield-check") @L["reported"]</div>
+        }
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="verdict">@Ui.Emoji(mood.Emoji, 34) @moodLabel</span>
+            <a class="badge rounded-pill bg-brand-soft text-decoration-none" href="/?cat=@p.CategoryId">@L.Cat(p.Category)</a>
+        </div>
+        <h1 class="h3 fw-bold mt-2 mb-2">@p.Title</h1>
+        <div class="d-flex align-items-center gap-2 text-muted small mb-3">
+            <span class="avatar">@(p.AuthorName.Length > 0 ? p.AuthorName[..1].ToUpperInvariant() : "?")</span>
+            <span><b class="text-dark">@p.AuthorName</b> · <time datetime="@p.CreatedAt.ToString("s")Z">@p.CreatedAt.ToString("dd MMM yyyy")</time></span>
+        </div>
+        <div class="post-body mb-3">@p.Body</div>
+
+        <div class="action-bar">
+            <form method="post" asp-page-handler="Like" data-like>
+                <button class="btn @(Model.Liked ? "btn-danger" : "btn-outline-danger")" @(Model.Liked ? "disabled" : "")>@Ui.Icon(Model.Liked ? "heart-fill" : "heart") <span>@p.Likes</span></button>
+            </form>
+            <button type="button" class="btn btn-outline-dark" data-share data-url="@url" data-text="@L["share_text"]: @p.Title" data-done="@L["copied"]">@Ui.Icon("share-fill") <span>@L["share"]</span></button>
+            <button type="button" class="btn btn-brand @(fresh ? "pulse" : "")" data-card
+                    data-title="@p.Title" data-body="@(p.Body.Length > 220 ? p.Body[..220] : p.Body)" data-author="@p.AuthorName"
+                    data-cat="@L.Cat(p.Category)" data-mood-char="@mood.Char" data-mood-label="@moodLabel" data-mood-color="@mood.Color" data-likes="@p.Likes" data-cta="@L["read_more"]" data-site="@Request.Host">
+                @Ui.Icon("image-fill") <span>@L["card"]</span>
+            </button>
+        </div>
+
+        <section class="comments-card mt-4" id="comments">
+            <header class="d-flex align-items-center gap-2 mb-3">
+                @Ui.Emoji("1f4ac", 26)
+                <h2 class="h6 fw-bold mb-0">@L["comments"]</h2>
+                <span class="count-pill">@comments.Count</span>
+            </header>
+
+            @if (comments.Count == 0)
+            {
+                <div class="comments-empty">
+                    @Ui.Emoji("1f44b", 40)
+                    <div>@L["comment_first"]</div>
+                </div>
+            }
+
+            @foreach (var c in comments)
+            {
+                <div class="bubble-row reveal">
+                    <span class="avatar avatar-sm">@(c.AuthorName.Length > 0 ? c.AuthorName[..1].ToUpperInvariant() : "?")</span>
+                    <div class="bubble">
+                        <div class="d-flex align-items-baseline gap-2">
+                            <b class="small">@c.AuthorName</b>
+                            <time class="tiny text-muted" datetime="@c.CreatedAt.ToString("s")Z">@L.Ago(c.CreatedAt)</time>
+                            <form method="post" asp-page-handler="Report" asp-route-commentId="@c.Id" class="ms-auto bubble-report">
+                                <button class="btn btn-link p-0 text-muted" title="@L["report"]" aria-label="@L["report"]">@Ui.Icon("flag")</button>
+                            </form>
+                        </div>
+                        <div class="post-body">@c.Body</div>
+                    </div>
+                </div>
+            }
+
+            <form method="post" asp-page-handler="Comment" class="composer-wrap">
+                <div class="quick-replies" aria-label="@L["quick"]">
+                    @foreach (var q in L.QuickReplies(mood.Key))
+                    {
+                        <button type="button" class="chip chip-sm" data-quick="@q">@q</button>
+                    }
+                </div>
+                <div class="composer">
+                    <span class="avatar avatar-sm" data-initial-of="AuthorName">@Ui.Icon("person-fill")</span>
+                    <textarea asp-for="Body" rows="1" maxlength="1000" placeholder="@L["comment"]" required data-autogrow></textarea>
+                    <button class="send-btn" aria-label="@L["send"]">@Ui.Icon("send-fill")</button>
+                </div>
+                <span asp-validation-for="Body" class="text-danger small"></span>
+                <div class="as-name">
+                    <span class="text-muted small">@L["as"]</span>
+                    <input asp-for="AuthorName" maxlength="40" placeholder="@L["name"]" required data-remember="name" />
+                </div>
+                <span asp-validation-for="AuthorName" class="text-danger small"></span>
+            </form>
+        </section>
+
+        <form method="post" asp-page-handler="Report" class="text-center mt-3">
+            <button class="btn btn-link btn-sm text-muted text-decoration-none">@Ui.Icon("flag") @L["report"]</button>
+        </form>
+    </article>
+</div>

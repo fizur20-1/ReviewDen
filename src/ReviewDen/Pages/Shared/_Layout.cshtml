@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="@L.Code">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff5a1f" />
+    <title>@(ViewData["Title"] is string t ? t + " · " : "")ReviewDen</title>
+    @if (IsSectionDefined("Meta"))
+    {
+        @RenderSection("Meta")
+    }
+    else
+    {
+        <meta property="og:title" content="ReviewDen" />
+        <meta property="og:description" content="@L["tagline"]" />
+    }
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body data-mood="@ViewData["Mood"]" style="@(ViewData["MoodColor"] is string mc ? $"--mood:{mc}" : null)">
+    <nav class="navbar border-bottom sticky-top">
+        <div class="container gap-2">
+            <a class="navbar-brand fw-bold" href="/">Review<span class="text-brand">Den</span></a>
+            <div class="d-flex gap-2 align-items-center">
+                <a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="/lang/@(L.Bn ? "en" : "bn")?r=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)">@Ui.Icon("translate") @(L.Bn ? "English" : "বাংলা")</a>
+                <a class="btn btn-sm btn-brand rounded-pill px-3 d-none d-md-inline-block" href="/new">@Ui.Icon("plus-lg") @L["post"]</a>
+            </div>
+        </div>
+    </nav>
+    <main class="container py-3">
+        @RenderBody()
+    </main>
+    <footer class="text-center text-muted small py-4">ReviewDen · @L["tagline"]</footer>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

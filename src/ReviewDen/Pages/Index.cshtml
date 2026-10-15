@@ -1,0 +1,114 @@
+@page
+@model IndexModel
+
+@if (Model.Q == null && Model.Cat == null && Model.PageNo == 0 && Model.Sort != "scam")
+{
+    <section class="hero-banner mb-3">
+        <div class="hero-float" aria-hidden="true">
+            <span style="--x:66%;--y:14%;--d:6s">@Ui.Emoji("1f60d", 46)</span>
+            <span style="--x:88%;--y:10%;--d:7s">@Ui.Emoji("1f6a8", 44)</span>
+            <span style="--x:84%;--y:62%;--d:5.5s">@Ui.Emoji("1f44d", 40)</span>
+            <span style="--x:70%;--y:76%;--d:8s">@Ui.Emoji("1f911", 36)</span>
+        </div>
+        <div class="hero-content">
+            <h1 class="fw-bold mb-2">
+                @L["hero"] <span class="typed" data-words="@string.Join("|", Model.Categories.Select(L.Cat))">@L.Cat(Model.Categories.FirstOrDefault())</span><span class="caret" aria-hidden="true"></span>
+            </h1>
+            <p class="hero-sub mb-3">@L["hero_sub"]</p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <a class="btn btn-light rounded-pill px-4 fw-bold text-brand" href="/new">@Ui.Icon("plus-lg") @L["post"]</a>
+                <a class="btn btn-outline-light rounded-pill px-4 fw-semibold" href="@Model.Link("scam")">🚨 @L["scam_tab"]</a>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="stat">@Ui.Icon("chat-square-heart-fill") <b>@Model.TotalReviews</b> @L["reviews"]</span>
+                <span class="stat">@Ui.Icon("exclamation-octagon-fill") <b>@Model.TotalScams</b> @L["scams"]</span>
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.ScamTicker.Count > 0)
+{
+    <div class="ticker mb-3">
+        <span class="ticker-label">🚨 @L["ticker"]</span>
+        <div class="ticker-track">
+            <div class="ticker-move">
+                @for (var r = 0; r < 2; r++)
+                {
+                    foreach (var s in Model.ScamTicker)
+                    {
+                        <a href="/p/@s.Id" tabindex="@(r == 0 ? 0 : -1)">@s.Title</a>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<div class="toolbar mb-2">
+    <form method="get" class="search flex-grow-1">
+        <input type="hidden" name="sort" value="@Model.Sort" />
+        @if (Model.Cat != null) { <input type="hidden" name="cat" value="@Model.Cat" /> }
+        @Ui.Icon("search")
+        <input type="search" name="q" value="@Model.Q" class="form-control form-control-lg" placeholder="@L["search"]" enterkeyhint="search" />
+    </form>
+    <nav class="tabs" aria-label="Sort">
+        <a class="tab @(Model.Sort == "trending" ? "on" : "")" href="@Model.Link("trending")">@Ui.Emoji("1f525", 20) @L["trending"]</a>
+        <a class="tab @(Model.Sort == "new" ? "on" : "")" href="@Model.Link("new")">@Ui.Emoji("2728", 20) @L["new"]</a>
+        <a class="tab tab-scam @(Model.Sort == "scam" ? "on" : "")" href="@Model.Link("scam")">@Ui.Emoji("1f6a8", 20) <span class="d-none d-sm-inline">@L["scam_tab"]</span></a>
+    </nav>
+</div>
+
+<div class="chips mb-3">
+    <a class="chip @(Model.Cat == null ? "on" : "")" href="@Model.Link(cat: null)">@Ui.Icon("grid-fill") @L["all"]</a>
+    @foreach (var c in Model.Categories)
+    {
+        <a class="chip @(Model.Cat == c.Id ? "on" : "")" href="@Model.Link(cat: c.Id)">@Moods.ForCategory(c.Id).Split(' ')[0] @L.Cat(c)</a>
+    }
+</div>
+
+@if (Model.Posts.Count == 0)
+{
+    <div class="empty-state">
+        @Ui.Emoji("1f440", 72)
+        <p class="mt-2 mb-3">@L["empty"]</p>
+        <a class="btn btn-brand rounded-pill px-4" href="/new">@Ui.Icon("plus-lg") @L["post"]</a>
+    </div>
+}
+
+<div class="row g-2 g-md-3">
+    @{ var i = 0; }
+    @foreach (var p in Model.Posts)
+    {
+        var m = Moods.Of(p.Mood);
+        <div class="col-6 col-md-4 col-xl-3 reveal" style="--i:@(i++ % 8)">
+            <a class="card h-100 post-card text-decoration-none text-dark" href="/p/@p.Id" style="--c:@m.Color">
+                <div class="shimmer">
+                    <img src="/uploads/@p.ImagePath" class="card-img-top" alt="@p.Title" loading="lazy" />
+                    <span class="mood-tag">@m.Char @(L.Bn ? m.Bn : m.En)</span>
+                    <div class="img-stats">
+                        <span>@Ui.Icon("heart-fill") @p.Likes</span>
+                        <span>@Ui.Icon("chat-fill") @p.Comments.Count(c => !c.Hidden)</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tiny fw-semibold text-uppercase cat-label">@L.Cat(p.Category)</div>
+                    <div class="fw-bold lh-sm clamp-2 card-title-text">@p.Title</div>
+                    <div class="small text-muted clamp-2 d-none d-md-block mt-1">@p.Body</div>
+                    <div class="card-foot">
+                        <span class="avatar avatar-xs">@(p.AuthorName.Length > 0 ? p.AuthorName[..1].ToUpperInvariant() : "?")</span>
+                        <span class="text-truncate">@p.AuthorName</span>
+                        <span class="ms-auto text-nowrap">@L.Ago(p.CreatedAt)</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    }
+</div>
+
+@if (Model.HasMore)
+{
+    <div class="text-center mt-4"><a class="btn btn-outline-dark rounded-pill px-4" href="@Model.Link(p: Model.PageNo + 1)">@L["more"] @Ui.Icon("arrow-down")</a></div>
+}
+
+<a class="fab d-md-none" href="/new" aria-label="@L["post"]">@Ui.Icon("plus-lg")</a>

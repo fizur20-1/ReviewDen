@@ -1,0 +1,10 @@
+@page "/admin/login"
+@model ReviewDen.Pages.Admin.LoginModel
+@{ ViewData["Title"] = "Admin"; }
+
+<form method="post" class="mx-auto" style="max-width:360px">
+    <h1 class="h4 mb-3">Admin</h1>
+    @if (Model.Error != null) { <div class="alert alert-danger py-2">@Model.Error</div> }
+    <input type="password" name="password" class="form-control mb-2" placeholder="Password" autocomplete="current-password" required />
+    <button class="btn btn-dark w-100">Sign in</button>
+</form>
